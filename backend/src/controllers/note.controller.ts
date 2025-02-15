@@ -14,7 +14,8 @@ import {
   updateNoteService,
   searchNotesService,
   moveToTrashService,
-  restoreOrDeleteNoteService
+  restoreOrDeleteNoteService,
+  updateNotePinnedService
 } from "../services/note.service";
 import { HTTPSTATUS } from "../config/http.config";
 
@@ -26,7 +27,8 @@ export const createNoteController = asyncHandler(
     const { note } = await createNoteService(userId, body);
 
     return res.status(HTTPSTATUS.OK).json({
-      message: "Note created successfully",
+      success: true,
+      message: "Tạo Note mới thành công!",
       note,
     });
   }
@@ -35,7 +37,6 @@ export const createNoteController = asyncHandler(
 export const updateNoteController = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user?._id;
-    console.log("Request body received:", req.body);
 
     try {
       const body = updateNoteSchema.parse(req.body);
@@ -44,7 +45,8 @@ export const updateNoteController = asyncHandler(
       const { note } = await updateNoteService(userId, noteId, body);
 
       return res.status(HTTPSTATUS.OK).json({
-        message: "Note updated successfully",
+        success: true,
+        message: "Cập nhật Note thành công!",
         note,
       });
     } catch (error) {
@@ -54,26 +56,45 @@ export const updateNoteController = asyncHandler(
   }
 );
 
+export const updateNotePinnedController = asyncHandler(
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?._id;
+      const noteId = noteIdSchema.parse(req.params.noteId);
+
+      // Gọi service để cập nhật trạng thái isPinned
+      const { note } = await updateNotePinnedService(userId, noteId);
+
+      return res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: `Ghi chú đã được ${note.isPinned ? "ghim" : "bỏ ghim"} thành công!`,
+        note,
+      });
+    } catch (error) {
+      console.error("Error updating isPinned:", error);
+      return res.status(HTTPSTATUS.BAD_REQUEST).json({
+        success: false,
+        message: "Lỗi khi cập nhật trạng thái ghim!",
+        error: (error as Error).message,
+      });
+    }
+  }
+);
 
 export const getAllNotesController = asyncHandler(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user?._id;
-
-      // Nếu không có userId, báo lỗi Unauthorized
       if (!userId) {
         return res.status(HTTPSTATUS.UNAUTHORIZED).json({
           message: "User not authenticated",
         });
       }
-
-      // Xử lý các bộ lọc
       const filters: Record<string, any> = {
         keyword: req.query.keyword as string | undefined,
         tags: req.query.tags ? (req.query.tags as string).split(",") : undefined,
       };
 
-      // Kiểm tra nếu query có giá trị hợp lệ
       if (req.query.isPinned !== undefined) {
         filters.isPinned = req.query.isPinned === "true";
       }
@@ -81,14 +102,14 @@ export const getAllNotesController = asyncHandler(
         filters.isDeleted = req.query.isDeleted === "true";
       }
 
-      console.log("Filters applied:", filters); // Log kiểm tra filter
+      console.log("Filters applied:", filters);
 
-      // Gọi service để lấy danh sách ghi chú
       const result = await getAllNotesService(userId, filters);
 
       console.log("Notes fetched:", result.notes.length); // Log số lượng note tìm thấy
 
       return res.status(HTTPSTATUS.OK).json({
+        success: true,
         message: "All notes fetched successfully",
         ...result,
       });
@@ -111,6 +132,7 @@ export const getNoteByIdController = asyncHandler(
     const note = await getNoteByIdService(userId, noteId);
 
     return res.status(HTTPSTATUS.OK).json({
+      success: true,
       message: "Note fetched successfully",
       note,
     });
@@ -125,7 +147,8 @@ export const deleteNoteController = asyncHandler(
     await deleteNoteService(userId, noteId);
 
     return res.status(HTTPSTATUS.OK).json({
-      message: "Note deleted successfully",
+      success: true,
+      message: "Xóa Note thành công!",
     });
   }
 );
@@ -138,6 +161,7 @@ export const searchNotesController = asyncHandler(
     const notes = await searchNotesService(userId, keyword);
 
     return res.status(HTTPSTATUS.OK).json({
+      success: true,
       message: "Notes searched successfully",
       notes,
     });
@@ -146,15 +170,16 @@ export const searchNotesController = asyncHandler(
 
 export const moveToTrashController = asyncHandler(
   async (req: Request, res: Response) => {
-    const noteId = req.params.noteId; // Đảm bảo lấy đúng `noteId`
+    const noteId = req.params.noteId;
     
-    console.log("moveToTrashController - noteId:", noteId); // Debug ID
+    console.log("moveToTrashController - noteId:", noteId);
 
     try {
       await moveToTrashService(noteId);
 
       return res.status(HTTPSTATUS.OK).json({
-        message: "Note moved to trash successfully",
+        success: true,
+        message: "Note đã được chuyển vào thùng rác!",
       });
     } catch (error) {
       console.error("Error in moveToTrashController:", error);
@@ -173,6 +198,7 @@ export const restoreOrDeleteNoteController = asyncHandler(
     await restoreOrDeleteNoteService(id, actionType as string);
 
     return res.status(HTTPSTATUS.OK).json({
+      success: true,
       message: "Operation performed successfully",
     });
   }

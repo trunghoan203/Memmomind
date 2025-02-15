@@ -67,7 +67,7 @@ export const registerUserService = async (body: {
 
     const existingUser = await UserModel.findOne({ email }).session(session);
     if (existingUser) {
-      throw new BadRequestException("Email already exists");
+      throw new BadRequestException("Tài khoản đã được đăng ký!");
     }
 
     const user = new UserModel({
@@ -109,7 +109,7 @@ export const verifyUserService = async ({
 }) => {
   const account = await AccountModel.findOne({ provider, providerId: email });
   if (!account) {
-    throw new NotFoundException("Invalid email or password");
+    throw new NotFoundException("Email không chính xác!");
   }
 
   const user = await UserModel.findById(account.userId);
@@ -119,7 +119,7 @@ export const verifyUserService = async ({
 
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
-    throw new UnauthorizedException("Invalid email or password");
+    throw new UnauthorizedException("Mật khẩu không chính xác!");
   }
 
   return user.omitPassword();

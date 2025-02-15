@@ -73,6 +73,21 @@ export const getAllNotesService = async (
   return { notes };
 };
 
+export const updateNotePinnedService = async (userId: string, noteId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(noteId)) {
+    throw new NotFoundException("Invalid note ID.");
+  }
+
+  const note = await NoteModel.findOne({ _id: noteId, userId });
+  if (!note) throw new NotFoundException("Note not found.");
+
+  note.isPinned = !note.isPinned;
+
+  await note.save();
+
+  return { note };
+};
+
 export const getNoteByIdService = async (userId: string, noteId: string) => {
   const note = await NoteModel.findOne({ _id: noteId, userId });
   if (!note) throw new NotFoundException("Note not found.");

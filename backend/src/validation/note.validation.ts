@@ -12,13 +12,13 @@ export const createNoteSchema = z.object({
   title: titleSchema,
   content: contentSchema,
   tags: tagsSchema,
-  isPinned: isPinnedSchema,
-  userId: userIdSchema,
+  // isPinned: isPinnedSchema,
+  // userId: userIdSchema,
 });
 
 export const updateNoteSchema = z.object({
   title: titleSchema.optional(),  
   content: contentSchema.optional(), 
   tags: tagsSchema.optional(),
-  isPinned: isPinnedSchema.optional(),
+  // isPinned: isPinnedSchema.optional(),
 });
